@@ -4,6 +4,7 @@ import com.example.e2e.logging.Masking;
 import io.cucumber.plugin.ConcurrentEventListener;
 import io.cucumber.plugin.event.EventPublisher;
 import io.cucumber.plugin.event.PickleStepTestStep;
+import io.cucumber.plugin.event.TestCaseFinished;
 import io.cucumber.plugin.event.TestCaseStarted;
 
 import java.util.List;
@@ -24,7 +25,8 @@ public class StepTracker implements ConcurrentEventListener {
     }
 
     /**
-     * Records each scenario's step texts when it starts.
+     * Records each scenario's step texts when it starts and forgets them when it finishes, so a pooled
+     * thread never carries a previous scenario's steps.
      *
      * @param publisher Cucumber's event publisher
      */
@@ -35,6 +37,7 @@ public class StepTracker implements ConcurrentEventListener {
                 .map(PickleStepTestStep.class::cast)
                 .map(s -> Masking.maskInline(s.getStep().getKeyword() + s.getStep().getText()))
                 .toList()));
+        publisher.registerHandlerFor(TestCaseFinished.class, event -> STEPS.remove());
     }
 
     /**

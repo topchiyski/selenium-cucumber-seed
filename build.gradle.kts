@@ -121,6 +121,7 @@ tasks.register<Test>("rerunFailed") {
     group = "verification"
     description = "Re-runs only the scenarios listed in build/rerun/failed.txt by the last test run."
     configureCucumberTask("src/test/resources/testng-rerun.xml", "RerunFailedRunner")
+    mustRunAfter(tasks.test) // `./gradlew rerunFailed test` must still rerun this run's failures, not the last one's
     systemProperty("log.file", layout.buildDirectory.file("logs/e2e-rerun.log").get().asFile.absolutePath)
     val rerunFile = layout.buildDirectory.file("rerun/failed.txt")
     onlyIf("there are failed scenarios to rerun") {

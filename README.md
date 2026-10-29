@@ -63,7 +63,7 @@ Every setting can be passed as `-Dkey=value` (see [config](#configuration)). The
 | Show console output in Gradle | `-Pverbose` |
 | Keep Allure results of previous runs | `-PkeepAllureResults` |
 | More console output | `-Dlog.console.level=DEBUG` (file always gets `log.level`, default DEBUG) |
-| Reproducible fake data | `-Dfaker.seed=42` |
+| Reproducible fake data | `-Dfaker.seed=42` (each scenario gets its own data, the same on every run) |
 
 Note: `--tests` doesn't work for selecting scenarios; use tags or `cucumber.features`.
 
@@ -304,7 +304,7 @@ CLAUDE.md, .claude/         instructions and rules for Claude Code
 | Windows PowerShell: Gradle reports "Task '.filter.tags=...' not found" or a `-D` option is ignored | Quote the whole argument: `"-Dcucumber.filter.tags=@smoke"`. |
 | First page load takes ~30s and pages time out | Check for local ad blockers or traffic filters (e.g. AdGuard) injecting scripts into the test browser; exclude the browser from filtering. |
 | Element not found / flaky clicks | Use the page-object helpers from `UiObject` (they wait); for custom conditions use `browser.waits().until(ExpectedConditions...)`. Increase `timeout.explicit` for slow environments. |
-| Tests interfere with each other in parallel | Don't store state in static fields; use `TestContext` or another injected object. Test data must be unique per scenario (use Datafaker). |
+| Tests interfere with each other in parallel | Don't store state in static fields; use `TestContext` or another injected object. Test data must be unique per scenario (use `TestDataFactory`), and scenarios that change server-side state shouldn't share one user account; give them their own users. |
 | No console logs in report for Firefox | Firefox doesn't expose them through WebDriver; this is expected. |
 
 ## License
