@@ -1,0 +1,26 @@
+[
+  {
+    "name": "Known failures (@known-failure)",
+    "matchedStatuses": ["failed", "broken"],
+    "messageRegex": ".*KNOWN-FAILURE.*"
+  },
+  {
+    "name": "Product defects",
+    "matchedStatuses": ["failed"],
+    "messageRegex": ".*expected.*"
+  },
+  {
+    "name": "Element not found / timing",
+    "matchedStatuses": ["broken", "failed"],
+    "traceRegex": ".*(NoSuchElementException|TimeoutException|StaleElementReferenceException).*"
+  },
+  {
+    "name": "Browser / driver / grid problems",
+    "matchedStatuses": ["broken", "failed"],
+    "traceRegex": ".*(SessionNotCreatedException|WebDriverException|UnreachableBrowserException).*"
+  },
+  {
+    "name": "Ignored tests",
+    "matchedStatuses": ["skipped"]
+  }
+]

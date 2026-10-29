@@ -1,0 +1,46 @@
+# Adds video recording to docker-compose.yml. One recorder per node; each recording is split per
+# session and written to build/videos as <session id>.mp4 (the session id is attached to failed
+# scenarios in the reports as "Browser state").
+#   ./gradlew gridUp -Pvideo
+# Nodes run one session at a time while recording so every video shows a single scenario.
+name: selenium-grid
+
+x-video: &video
+  image: selenium/video:ffmpeg-8.1-20261010
+  volumes:
+    - ../build/videos:/videos
+  environment: &video-env
+    SE_NODE_GRID_URL: http://selenium-hub:4444
+    SE_VIDEO_FILE_NAME: auto
+
+services:
+  chrome:
+    environment:
+      SE_NODE_MAX_SESSIONS: "1"
+  firefox:
+    environment:
+      SE_NODE_MAX_SESSIONS: "1"
+  edge:
+    environment:
+      SE_NODE_MAX_SESSIONS: "1"
+
+  chrome-video:
+    <<: *video
+    depends_on: [chrome]
+    environment:
+      <<: *video-env
+      DISPLAY_CONTAINER_NAME: chrome
+
+  firefox-video:
+    <<: *video
+    depends_on: [firefox]
+    environment:
+      <<: *video-env
+      DISPLAY_CONTAINER_NAME: firefox
+
+  edge-video:
+    <<: *video
+    depends_on: [edge]
+    environment:
+      <<: *video-env
+      DISPLAY_CONTAINER_NAME: edge

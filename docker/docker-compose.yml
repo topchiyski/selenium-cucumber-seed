@@ -1,0 +1,42 @@
+# Local Selenium Grid 4: hub + one node per browser.
+#   ./gradlew gridUp              (or: docker compose -f docker/docker-compose.yml up -d)
+#   ./gradlew test -Denv=grid     (or -Dexecution=remote -Dgrid.url=http://localhost:4444)
+#   Grid UI: http://localhost:4444/ui   Live view of sessions (noVNC, password "secret"): click the camera icon
+#   ./gradlew gridDown
+name: selenium-grid
+
+x-node: &node
+  shm_size: 2gb
+  depends_on:
+    - selenium-hub
+  environment:
+    SE_EVENT_BUS_HOST: selenium-hub
+    SE_EVENT_BUS_PUBLISH_PORT: "4442"
+    SE_EVENT_BUS_SUBSCRIBE_PORT: "4443"
+    SE_NODE_MAX_SESSIONS: "${SE_NODE_MAX_SESSIONS:-2}"
+    SE_NODE_OVERRIDE_MAX_SESSIONS: "true"
+
+services:
+  selenium-hub:
+    image: selenium/hub:4.51.0-20261010
+    ports:
+      - "4442:4442"
+      - "4443:4443"
+      - "4444:4444"
+    healthcheck:
+      test: ["CMD", "/opt/bin/check-grid.sh", "--host", "0.0.0.0", "--port", "4444"]
+      interval: 5s
+      timeout: 10s
+      retries: 20
+
+  chrome:
+    <<: *node
+    image: selenium/node-chrome:4.51.0-20261010
+
+  firefox:
+    <<: *node
+    image: selenium/node-firefox:4.51.0-20261010
+
+  edge:
+    <<: *node
+    image: selenium/node-edge:4.51.0-20261010

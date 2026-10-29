@@ -1,0 +1,27 @@
+# Gradle
+.gradle/
+build/
+# TestNG output when a suite is run outside Gradle (e.g. from an IDE)
+test-output/
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+out/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Local overrides (never commit secrets)
+src/test/resources/config/*.local.properties
+.env
+
+# Claude Code personal files
+CLAUDE.local.md
+.claude/settings.local.json
+.claude/worktrees/

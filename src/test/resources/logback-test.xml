@@ -1,0 +1,59 @@
+<configuration>
+  <!--
+    Levels (override with -D, e.g. ./gradlew test -Dlog.level=DEBUG -Dlog.console.level=DEBUG):
+      log.level          framework loggers (com.example.e2e)          default DEBUG
+      log.console.level  what reaches the console                     default INFO
+      log.file           log file                                     default build/logs/e2e.log
+    The file and the per-scenario report attachment get everything log.level lets through.
+    MDC "scenario" is set per scenario by ExecutionLogger, so parallel lines stay attributable.
+  -->
+  <contextListener class="ch.qos.logback.classic.jul.LevelChangePropagator">
+    <!-- keeps java.util.logging (Selenium) levels in sync with the levels below; avoids JUL overhead -->
+    <resetJUL>true</resetJUL>
+  </contextListener>
+
+  <property name="PATTERN" value="%d{HH:mm:ss.SSS} %-5level [%thread] [%X{scenario:-}] %logger{24} - %msg%n"/>
+  <property name="SCENARIO_PATTERN" value="%d{HH:mm:ss.SSS} %-5level %logger{24} - %msg%n"/>
+
+  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+      <level>${log.console.level:-INFO}</level>
+    </filter>
+    <encoder><pattern>${PATTERN}</pattern></encoder>
+  </appender>
+
+  <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+    <file>${log.file:-build/logs/e2e.log}</file>
+    <append>false</append>
+    <encoder><pattern>${PATTERN}</pattern></encoder>
+  </appender>
+
+  <!-- Buffers each scenario's lines; Hooks attaches them to the report as "Scenario log". -->
+  <appender name="SCENARIO" class="com.example.e2e.logging.ScenarioLogAppender">
+    <encoder><pattern>${SCENARIO_PATTERN}</pattern></encoder>
+  </appender>
+
+  <!-- Writing to the console/file must not slow down parallel browser threads. -->
+  <appender name="ASYNC_FILE" class="ch.qos.logback.classic.AsyncAppender">
+    <appender-ref ref="FILE"/>
+    <queueSize>8192</queueSize>
+    <discardingThreshold>0</discardingThreshold>
+    <neverBlock>false</neverBlock>
+  </appender>
+
+  <logger name="com.example.e2e" level="${log.level:-DEBUG}"/>
+  <logger name="io.cucumber" level="INFO"/>
+  <logger name="org.openqa.selenium" level="WARN"/>
+  <!-- "Unable to find an exact match for CDP version" on every Chrome start; harmless -->
+  <logger name="org.openqa.selenium.devtools.CdpVersionFinder" level="ERROR"/>
+  <logger name="org.openqa.selenium.manager" level="INFO"/>
+  <logger name="io.netty" level="WARN"/>
+  <logger name="org.apache.http" level="WARN"/>
+  <logger name="io.restassured" level="WARN"/>
+
+  <root level="WARN">
+    <appender-ref ref="CONSOLE"/>
+    <appender-ref ref="ASYNC_FILE"/>
+    <appender-ref ref="SCENARIO"/>
+  </root>
+</configuration>
