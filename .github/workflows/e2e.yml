@@ -15,6 +15,10 @@ on:
   schedule:
     - cron: "0 5 * * 1-5" # weekday mornings
 
+# Least privilege for the workflow token: the job only reads the code and uploads artifacts.
+permissions:
+  contents: read
+
 concurrency:
   group: e2e-${{ github.ref }}
   cancel-in-progress: true
@@ -31,15 +35,21 @@ jobs:
     env:
       E2E_ENV: ${{ inputs.env || 'dev' }}
       E2E_TAGS: ${{ inputs.tags || 'not @wip and not @known-failure' }}
+      # Applitools visual checks (@visual): add the key as a repository secret; without it they're skipped.
+      APPLITOOLS_API_KEY: ${{ secrets.APPLITOOLS_API_KEY }}
+      # One batch per workflow run, shared by the browser jobs and the rerun.
+      APPLITOOLS_BATCH_ID: ${{ github.run_id }}-${{ github.run_attempt }}
+      APPLITOOLS_BATCH_NAME: E2E ${{ github.ref_name }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-java@v4
+      # `cache: gradle` caches ~/.gradle (dependencies, wrapper). gradle/actions is deliberately not used:
+      # since v6 its caching is a proprietary component under Gradle's Terms of Use.
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "21"
-
-      - uses: gradle/actions/setup-gradle@v4
+          cache: gradle
 
       # Browsers are preinstalled on ubuntu-latest; Selenium Manager fetches matching drivers.
       - name: Run tests
@@ -60,7 +70,7 @@ jobs:
 
       - name: Upload reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: e2e-reports-${{ matrix.browser }}
           path: |

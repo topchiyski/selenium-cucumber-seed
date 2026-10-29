@@ -7,14 +7,16 @@ A starter project for end-to-end browser tests:
 - **Screenshots before and after every step**, plus page source, URL and browser console log on failure
 - **Allure** report and Cucumber HTML/JSON reports
 - Parallel scenarios, per-environment config, rerun of failed scenarios, REST Assured API helper, Datafaker test data
+- Visual (screenshot comparison) tests with **Applitools Eyes**
 - Docker Compose grid (with optional video recording) and a GitHub Actions workflow
 
-The sample tests run against the public demo shop [saucedemo.com](https://www.saucedemo.com) and the fake REST API [jsonplaceholder.typicode.com](https://jsonplaceholder.typicode.com). Replace them with your own.
+The sample tests run against public practice sites: the demo shop [saucedemo.com](https://www.saucedemo.com) (provided by Sauce Labs for test automation practice; its login page publishes the demo credentials used here) and the fake REST API [jsonplaceholder.typicode.com](https://jsonplaceholder.typicode.com). Replace them with your own application.
 
 ## Prerequisites
 
 - JDK 21 (Gradle is provided by the wrapper — no install needed)
-- At least one of Chrome, Firefox or Edge
+- Internet access on the first run (dependencies, browser drivers)
+- Chrome, Firefox or Edge. Drivers are downloaded automatically, and so is Chrome or Firefox if it isn't installed (see [Browsers and drivers](#browsers-and-drivers))
 - Optional: Docker, for the local grid
 
 ## Quick start
@@ -25,6 +27,14 @@ The sample tests run against the public demo shop [saucedemo.com](https://www.sa
 ./gradlew allureServe               # build the Allure report and open it in the browser
 ```
 
+To **watch a scenario run**, keep the default visible browser and run one scenario on one thread:
+
+```bash
+./gradlew test -Dthreads=1 -Dcucumber.features=src/test/resources/features/checkout.feature:9
+```
+
+Scenarios take a few seconds; to step through one, set a breakpoint in a step definition and debug `CucumberTestRunner` from the IDE (see [Running in an IDE](#running-in-an-ide)). Afterwards, the Cucumber HTML report has a screenshot before and after every step.
+
 Reports after a run:
 
 | Report | Location |
@@ -33,6 +43,7 @@ Reports after a run:
 | Cucumber HTML (self-contained, screenshots embedded) | `build/reports/cucumber/cucumber.html` |
 | Cucumber JSON (for CI plugins) | `build/reports/cucumber/cucumber.json` |
 | Gradle/TestNG summary | `build/reports/tests/test/index.html` |
+| Framework API docs (run `./gradlew testJavadoc`) | `build/docs/testJavadoc/index.html` |
 | Log file (every line tagged with thread and scenario) | `build/logs/e2e.log` (`e2e-rerun.log` for `rerunFailed`) |
 
 ## Running tests
@@ -55,6 +66,15 @@ Every setting can be passed as `-Dkey=value` (see [config](#configuration)). The
 | Reproducible fake data | `-Dfaker.seed=42` |
 
 Note: `--tests` doesn't work for selecting scenarios; use tags or `cucumber.features`.
+
+> **Windows PowerShell:** quote every `-D` argument that contains a dot, or PowerShell splits it in two
+> (`-Dcucumber.filter.tags=@smoke` reaches Gradle as `-Dcucumber` and `.filter.tags=@smoke`):
+>
+> ```powershell
+> ./gradlew test "-Dcucumber.filter.tags=@smoke" "-Dthreads=1"
+> ```
+>
+> Git Bash, cmd and macOS/Linux shells don't need this.
 
 ### Rerunning failed scenarios
 
@@ -81,7 +101,7 @@ Config files live in `src/test/resources/config/`. Values are resolved in this o
 3. Environment variables — key upper-cased with `.`/`-` replaced by `_`, e.g. `BASE_URL`, `TIMEOUT_EXPLICIT`
 4. `-D` system properties
 
-Add an environment by creating `config/<name>.properties` with only the keys that differ. Keep secrets out of the files: pass them as environment variables (e.g. from CI secrets) and read them with `Config.get().get("my.secret")`.
+Add an environment by creating `config/<name>.properties` with only the keys that differ. Keep secrets out of the files: pass them as environment variables (e.g. `MY_SECRET`, from CI secrets or a local `.env` loaded by your shell; `.env` files are gitignored) and read them by injecting `Config` and calling `config.get("my.secret")`.
 
 ## Writing a new test
 
@@ -133,6 +153,8 @@ Add an environment by creating `config/<name>.properties` with only the keys tha
 
 4. **Run it**: `./gradlew test -Dcucumber.filter.tags=@profile`.
 
+5. **Document it**: public classes and methods carry Javadoc (`@param`, `@return`); `./gradlew testJavadoc` checks this and must stay free of warnings.
+
 ### Useful building blocks
 
 | Need | Use |
@@ -146,6 +168,7 @@ Add an environment by creating `config/<name>.properties` with only the keys tha
 | Table → object | `@DataTableType` in `data/DataTableTypes.java` (see `Customer`) |
 | Custom step parameter | `@ParameterType` in `data/DataTableTypes.java` (see `{sortOrder}`) |
 | Call an API for setup/verification | inject `ApiClient`; requests/responses are attached to Allure |
+| Compare the page with a visual baseline | tag the scenario `@visual`, use `Then the "Name" page should look as expected` or inject `VisualCheck` |
 | Scenario that doesn't need a browser | tag it `@api` |
 | Attach something to the report | `context.scenario().attach(bytes, "text/plain", "name")` |
 
@@ -158,6 +181,7 @@ Add an environment by creating `config/<name>.properties` with only the keys tha
 | `@wip` | Work in progress — excluded from normal runs |
 | `@known-failure` | Known product bug — excluded from normal runs |
 | `@issue=ABC-123`, `@tmsLink=TC-42` | Link to tracker / test case in Allure (set URL patterns in `allure.properties`) |
+| `@visual` | Applitools Eyes visual checks for this scenario (see [Visual testing](#visual-testing-applitools-eyes)) |
 | `@<feature-area>` | e.g. `@login`, `@cart`, `@checkout`, for selecting areas |
 
 ## Screenshots and failure artifacts
@@ -173,6 +197,63 @@ Everything logs through **SLF4J → Logback** (`src/test/resources/logback-test.
 - **Levels:** `-Dlog.level=INFO|DEBUG|TRACE` for framework loggers, `-Dlog.console.level=...` for the console, `-Dlog.file=...` for the file location. Library levels are set in `logback-test.xml`.
 - **Secrets:** config keys and HTTP headers named like password/secret/token/key/cookie are masked, as are quoted values after such words in step text (`password "******"`). Type passwords with `typeSecret(...)`.
 - **In your code:** page objects have a ready-made `log` field; elsewhere use `private static final Logger LOG = LoggerFactory.getLogger(MyClass.class);`. Use parameterized messages (`LOG.info("Added {}", item)`), and pass exceptions as the last argument. Don't log step start/end yourself — `ExecutionLogger` does it.
+
+## Visual testing (Applitools Eyes)
+
+Scenarios tagged `@visual` compare full-page screenshots with approved baselines using [Applitools Eyes](https://applitools.com). Each checkpoint **uploads a screenshot of the page to Applitools' cloud**, so only use it for pages that may leave your network.
+
+Applitools is a commercial service: you need your own account, and the Eyes SDK (downloaded by Gradle, not part of this repository) is used under the [Applitools SDK license](https://www.applitools.com/eula/sdk). Everything else works without it.
+
+**Enable it** by setting your API key as an environment variable (never in a file); without it, `@visual` scenarios still run their steps and the checkpoints are skipped with a warning:
+
+```bash
+export APPLITOOLS_API_KEY=...                   # Git Bash / macOS / Linux
+$env:APPLITOOLS_API_KEY = "..."                 # PowerShell
+./gradlew test -Dcucumber.filter.tags=@visual
+```
+
+**Write checks** with the visual steps; the comparison result is evaluated when the scenario ends:
+
+```gherkin
+@ui @visual
+Scenario: Checkout overview looks as expected
+  Given I am logged in as the "standard" user
+  Then the "Products" page should look as expected
+  And the "Products" page should look as expected ignoring:
+    | .footer_copy |
+```
+
+From Java, inject `VisualCheck` and call `visual.check("Name")`, `visual.check("Name", By.id("clock"))` (ignored regions) or `visual.check("Name", MatchLevel.LAYOUT)`.
+
+**Baselines and results:**
+- The first run with a key **creates** the baselines (the scenario passes, the log says "New Applitools baseline"); later runs compare with them.
+- Differences **fail the scenario** with a link to the Applitools dashboard, where you accept (new baseline) or reject them. The link is also attached to the Allure and Cucumber reports.
+- A baseline is identified by app name, scenario name, checkpoint name, browser, OS and viewport, so local Windows runs and Linux CI runs have separate baselines. Keep scenario and checkpoint names stable, and use fixed test data in `@visual` scenarios (not `random`).
+
+| Setting | Default | Purpose |
+|---|---|---|
+| `APPLITOOLS_API_KEY` (env) | — | Enables visual checks |
+| `applitools.enabled` | `true` | `false` turns checks off even with a key (e.g. to save quota locally) |
+| `applitools.match-level` | `strict` | `strict` (differences a person would notice), `exact` (pixel-by-pixel; flaky across machines), `layout`, `content`, `ignore_colors` |
+| `applitools.viewport` | `1280x800` | Viewport used for checks; changing it creates new baselines |
+| `applitools.app-name` | `Swag Labs` | Groups baselines in the dashboard |
+| `applitools.batch-name` / `APPLITOOLS_BATCH_ID` | `E2E` / — | One batch per run; set the id to merge several jobs into one batch (CI does) |
+| `applitools.server-url` | — | Dedicated Applitools cloud |
+
+In CI, add `APPLITOOLS_API_KEY` as a repository secret; the workflow passes it on and groups both browser jobs into one batch per workflow run.
+
+## Browsers and drivers
+
+Local runs need no driver setup. On each browser start, **Selenium Manager** (bundled with Selenium) finds the installed browser, downloads the matching driver (`chromedriver`, `msedgedriver`, `geckodriver`) and, if Chrome or Firefox isn't installed, the browser itself. Everything is cached in `~/.cache/selenium` (on Windows `C:\Users\<you>\.cache\selenium`) and reused until it expires.
+
+| Need | How |
+|---|---|
+| Use a specific driver binary | `-Dwebdriver.chrome.driver=C:\path\to\chromedriver.exe` (similarly `webdriver.edge.driver`, `webdriver.gecko.driver`) |
+| Move the cache | environment variable `SE_CACHE_PATH` |
+| No network access (use only what's cached) | environment variable `SE_OFFLINE=true` |
+| Stop Selenium Manager's anonymous usage statistics | environment variable `SE_AVOID_STATS=true` |
+
+With `execution=remote`, nothing is downloaded locally: browsers and drivers come from the grid nodes.
 
 ## Selenium Grid
 
@@ -205,11 +286,14 @@ src/test/java/com/example/e2e/
   data/      test data: Datafaker factory, DataTable/parameter types
   support/   Waits, ScreenshotService, BrowserConsole, Allure environment, StepTracker plugin
   logging/   SLF4J bootstrap, ExecutionLogger plugin, per-scenario log capture, masking
+  visual/    Applitools Eyes: VisualCheck (per scenario), VisualTestingRun (runner, batch)
 src/test/resources/
   features/  .feature files
   config/    <env>.properties
   testng.xml, testng-rerun.xml, allure.properties, categories.json, logback-test.xml
 docker/      Selenium Grid compose files
+.github/workflows/e2e.yml   CI pipeline
+CLAUDE.md, .claude/         instructions and rules for Claude Code
 ```
 
 ## Troubleshooting
@@ -217,7 +301,12 @@ docker/      Selenium Grid compose files
 | Symptom | Fix |
 |---|---|
 | `SessionNotCreatedException` because a driver/browser version doesn't match | Selenium Manager caches drivers in `~/.cache/selenium`; delete it and rerun. |
+| Windows PowerShell: Gradle reports "Task '.filter.tags=...' not found" or a `-D` option is ignored | Quote the whole argument: `"-Dcucumber.filter.tags=@smoke"`. |
 | First page load takes ~30s and pages time out | Check for local ad blockers or traffic filters (e.g. AdGuard) injecting scripts into the test browser; exclude the browser from filtering. |
-| Element not found / flaky clicks | Use `BasePage` helpers (they wait); for custom conditions use `browser.waits().until(ExpectedConditions...)`. Increase `timeout.explicit` for slow environments. |
+| Element not found / flaky clicks | Use the page-object helpers from `UiObject` (they wait); for custom conditions use `browser.waits().until(ExpectedConditions...)`. Increase `timeout.explicit` for slow environments. |
 | Tests interfere with each other in parallel | Don't store state in static fields; use `TestContext` or another injected object. Test data must be unique per scenario (use Datafaker). |
 | No console logs in report for Firefox | Firefox doesn't expose them through WebDriver; this is expected. |
+
+## License
+
+[MIT](LICENSE) © 2026 Stoyan Topchiyski. Third-party libraries are downloaded by Gradle and keep their own licenses; the Applitools Eyes SDK is commercial (see [Visual testing](#visual-testing-applitools-eyes)).

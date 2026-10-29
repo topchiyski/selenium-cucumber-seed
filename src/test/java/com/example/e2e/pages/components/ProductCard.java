@@ -23,19 +23,36 @@ public class ProductCard {
     private final WebElement root;
     private final Waits waits;
 
+    /**
+     * Wraps one product tile.
+     *
+     * @param root the tile element; all lookups are relative to it
+     * @param waits used to wait until the tile's button is clickable
+     */
     public ProductCard(WebElement root, Waits waits) {
         this.root = root;
         this.waits = waits;
     }
 
+    /**
+     * The product name shown on the tile.
+     *
+     * @return the product name
+     */
     public String name() {
         return root.findElement(NAME).getText().trim();
     }
 
+    /**
+     * The price shown on the tile.
+     *
+     * @return the price without currency symbol
+     */
     public BigDecimal price() {
         return new BigDecimal(root.findElement(PRICE).getText().replace("$", "").trim());
     }
 
+    /** Clicks the tile's "Add to cart" button. */
     public void addToCart() {
         LOG.info("Add '{}' to cart", name());
         waits.until(ExpectedConditions.elementToBeClickable(root.findElement(ADD_TO_CART))).click();

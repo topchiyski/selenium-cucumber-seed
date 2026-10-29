@@ -26,6 +26,7 @@ val restAssuredVersion = "6.3.0"
 val jacksonVersion = "2.22.4"
 val datafakerVersion = "2.7.0"
 val logbackVersion = "1.6.6"
+val applitoolsEyesVersion = "5.85.17"
 val slf4jVersion = "2.0.20"
 
 dependencies {
@@ -43,6 +44,7 @@ dependencies {
     testImplementation("io.rest-assured:rest-assured:$restAssuredVersion")
     testImplementation("com.fasterxml.jackson.core:jackson-databind:$jacksonVersion") // JSON (de)serialization for REST Assured
     testImplementation("net.datafaker:datafaker:$datafakerVersion")
+    testImplementation("com.applitools:eyes-selenium-java5:$applitoolsEyesVersion") // visual testing (Applitools Eyes)
 
     // Logging: everything goes through SLF4J to Logback. Selenium logs via java.util.logging and
     // Apache HttpClient (REST Assured) via commons-logging; the bridges reroute both.
@@ -69,7 +71,7 @@ allure {
 // e.g. ./gradlew test -Dbrowser=firefox -Dcucumber.filter.tags=@smoke
 val forwardedPropertyPrefixes = listOf(
     "env", "browser", "headless", "execution", "grid.", "base.url", "api.", "timeout.",
-    "window.", "page-load.", "screenshot.", "threads", "user.", "faker.", "cucumber.", "log.",
+    "window.", "page-load.", "screenshot.", "threads", "user.", "faker.", "cucumber.", "log.", "applitools.",
 )
 
 fun Test.configureCucumberTask(suiteFile: String, runnerClass: String) {
@@ -123,6 +125,21 @@ tasks.register<Test>("rerunFailed") {
     val rerunFile = layout.buildDirectory.file("rerun/failed.txt")
     onlyIf("there are failed scenarios to rerun") {
         rerunFile.get().asFile.let { it.exists() && it.readText().isNotBlank() }
+    }
+}
+
+// All code lives in src/test, which the standard `javadoc` task doesn't cover.
+tasks.register<Javadoc>("testJavadoc") {
+    group = "documentation"
+    description = "Generates Javadoc for the test framework into build/docs/testJavadoc and checks it with doclint."
+    source = sourceSets.test.get().allJava
+    classpath = sourceSets.test.get().compileClasspath + sourceSets.test.get().output
+    setDestinationDir(layout.buildDirectory.dir("docs/testJavadoc").get().asFile)
+    (options as StandardJavadocDocletOptions).apply {
+        encoding = "UTF-8"
+        windowTitle = "${project.name} test framework"
+        addBooleanOption("Xdoclint:all", true)
+        addStringOption("Xmaxwarns", "1000")
     }
 }
 

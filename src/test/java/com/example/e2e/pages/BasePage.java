@@ -14,14 +14,27 @@ import org.openqa.selenium.TimeoutException;
  */
 public abstract class BasePage extends UiObject {
 
+    /**
+     * Creates the page object.
+     *
+     * @param browser the scenario's browser
+     */
     protected BasePage(Browser browser) {
         super(browser);
     }
 
-    /** An element that is visible only on this page. */
+    /**
+     * An element that is visible only on this page.
+     *
+     * @return locator of the marker element
+     */
     protected abstract By pageMarker();
 
-    /** Waits for this page; fails with the expected page and the actual URL if it doesn't appear. */
+    /**
+     * Waits for this page; fails with the expected page and the actual URL if it doesn't appear.
+     *
+     * @throws IllegalStateException if the marker doesn't appear within {@code timeout.explicit}
+     */
     public void waitUntilLoaded() {
         try {
             visible(pageMarker());
@@ -32,12 +45,21 @@ public abstract class BasePage extends UiObject {
         }
     }
 
-    /** True if this page is shown right now (doesn't wait). */
+    /**
+     * True if this page is shown right now (doesn't wait).
+     *
+     * @return {@code true} if the marker element is visible
+     */
     public boolean isLoaded() {
         return isDisplayed(pageMarker());
     }
 
-    /** Opens a path relative to {@code base.url} and waits for this page. */
+    /**
+     * Opens a path relative to {@code base.url} and waits for this page.
+     *
+     * @param path path relative to {@code base.url}, e.g. {@code /}
+     * @throws IllegalStateException if the page doesn't appear
+     */
     protected void open(String path) {
         browser.open(path);
         waitUntilLoaded();

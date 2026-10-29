@@ -24,6 +24,15 @@ import org.testng.annotations.DataProvider;
         })
 public class RerunFailedRunner extends AbstractTestNGCucumberTests {
 
+    /** Created by TestNG from testng-rerun.xml. */
+    public RerunFailedRunner() {
+    }
+
+    /**
+     * Exposes the failed scenarios as a parallel DataProvider.
+     *
+     * @return one row per scenario listed in {@code build/rerun/failed.txt}
+     */
     @Override
     @DataProvider(parallel = true)
     public Object[][] scenarios() {

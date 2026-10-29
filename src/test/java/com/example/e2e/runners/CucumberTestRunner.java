@@ -24,6 +24,15 @@ import org.testng.annotations.DataProvider;
         })
 public class CucumberTestRunner extends AbstractTestNGCucumberTests {
 
+    /** Created by TestNG from testng.xml. */
+    public CucumberTestRunner() {
+    }
+
+    /**
+     * Exposes the scenarios as a parallel DataProvider; the thread count comes from {@link ParallelismListener}.
+     *
+     * @return one row per scenario
+     */
     @Override
     @DataProvider(parallel = true)
     public Object[][] scenarios() {

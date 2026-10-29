@@ -13,11 +13,21 @@ public class DataTableTypes {
 
     private final TestDataFactory testData;
 
+    /**
+     * Creates the type registry for one scenario.
+     *
+     * @param testData generates values for {@code random} table cells
+     */
     public DataTableTypes(TestDataFactory testData) {
         this.testData = testData;
     }
 
-    /** Converts a table with columns firstName | lastName | postalCode; the value "random" generates fake data. */
+    /**
+     * Converts a table with columns firstName | lastName | postalCode; the value "random" generates fake data.
+     *
+     * @param row one table row, keyed by column header
+     * @return the customer
+     */
     @DataTableType
     public Customer customer(Map<String, String> row) {
         Customer random = testData.randomCustomer();
@@ -27,7 +37,12 @@ public class DataTableTypes {
                 valueOrRandom(row.get("postalCode"), random.postalCode()));
     }
 
-    /** Maps readable sort names used in feature files to the values of the site's sort dropdown. */
+    /**
+     * Maps readable sort names used in feature files to the values of the site's sort dropdown.
+     *
+     * @param label the readable sort name from the step
+     * @return the dropdown value: {@code az}, {@code za}, {@code lohi} or {@code hilo}
+     */
     @ParameterType("name \\(A to Z\\)|name \\(Z to A\\)|price \\(low to high\\)|price \\(high to low\\)")
     public String sortOrder(String label) {
         return switch (label) {

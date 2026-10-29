@@ -16,11 +16,20 @@ public class ScreenshotService {
 
     private final Browser browser;
 
+    /**
+     * Creates the service.
+     *
+     * @param browser the scenario's browser
+     */
     public ScreenshotService(Browser browser) {
         this.browser = browser;
     }
 
-    /** Takes a PNG screenshot, or returns empty if no browser is running or the browser can't respond. */
+    /**
+     * Takes a PNG screenshot, or returns empty if no browser is running or the browser can't respond.
+     *
+     * @return the PNG bytes, or empty
+     */
     public Optional<byte[]> capture() {
         if (!browser.isStarted()) {
             return Optional.empty();
@@ -37,7 +46,12 @@ public class ScreenshotService {
         }
     }
 
-    /** Attaches a screenshot to the scenario; shows up in both the Cucumber HTML and the Allure report. */
+    /**
+     * Attaches a screenshot to the scenario; shows up in both the Cucumber HTML and the Allure report.
+     *
+     * @param scenario the scenario to attach to
+     * @param name the attachment name
+     */
     public void attach(Scenario scenario, String name) {
         capture().ifPresent(png -> {
             scenario.attach(png, "image/png", name);

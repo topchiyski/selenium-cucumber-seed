@@ -11,9 +11,20 @@ import java.util.Locale;
 /**
  * The browser-independent settings a {@link BrowserSetup} needs. Built from {@link Config} by
  * {@link WebDriverFactory}, so browser setups don't depend on the configuration mechanism.
+ *
+ * @param headless run without a visible window
+ * @param windowSize window size in pixels
+ * @param extraArgs additional browser command-line arguments
  */
 public record BrowserSettings(boolean headless, Dimension windowSize, List<String> extraArgs) {
 
+    /**
+     * Reads the settings from configuration.
+     *
+     * @param config source of {@code headless}, {@code window.size} and {@code browser.args}
+     * @return the settings
+     * @throws NumberFormatException if {@code window.size} is not {@code <width>x<height>}
+     */
     public static BrowserSettings from(Config config) {
         String[] size = config.get(ConfigKeys.WINDOW_SIZE).toLowerCase(Locale.ROOT).split("x");
         List<String> args = config.find(ConfigKeys.BROWSER_ARGS)

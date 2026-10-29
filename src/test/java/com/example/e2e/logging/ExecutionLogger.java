@@ -32,11 +32,13 @@ import java.util.stream.Collectors;
  */
 public class ExecutionLogger implements ConcurrentEventListener {
 
+    /** MDC key holding the running scenario's name; printed in every log line by logback-test.xml. */
     public static final String MDC_SCENARIO = "scenario";
     private static final Logger LOG = LoggerFactory.getLogger(ExecutionLogger.class);
 
     private final Map<Status, AtomicInteger> scenarioCounts = new EnumMap<>(Status.class);
 
+    /** Created by Cucumber from the runner's {@code plugin} list; also installs the JUL bridge. */
     public ExecutionLogger() {
         LoggingBootstrap.install();
         for (Status status : Status.values()) {
@@ -44,6 +46,11 @@ public class ExecutionLogger implements ConcurrentEventListener {
         }
     }
 
+    /**
+     * Subscribes to run, scenario and step events.
+     *
+     * @param publisher Cucumber's event publisher
+     */
     @Override
     public void setEventPublisher(EventPublisher publisher) {
         publisher.registerHandlerFor(TestRunStarted.class, e -> LOG.info("Test run started"));

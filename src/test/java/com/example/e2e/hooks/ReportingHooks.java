@@ -30,6 +30,14 @@ public class ReportingHooks {
     private final BrowserConsole console;
     private final Config config;
 
+    /**
+     * Creates the hooks for one scenario.
+     *
+     * @param context the scenario context
+     * @param browser the scenario's browser, for failure artifacts
+     * @param console reads the browser console log
+     * @param config decides whether the scenario log is attached
+     */
     public ReportingHooks(TestContext context, Browser browser, BrowserConsole console, Config config) {
         this.context = context;
         this.browser = browser;
@@ -43,16 +51,28 @@ public class ReportingHooks {
         AllureEnvironmentWriter.write(Config.get());
     }
 
+    /**
+     * Makes the scenario available to steps through {@link TestContext#scenario()}.
+     *
+     * @param scenario the scenario that is about to run
+     */
     @Before(order = HookOrder.CONTEXT)
     public void rememberScenario(Scenario scenario) {
         context.setScenario(scenario);
     }
 
+    /** Fails the scenario if any soft assertion made through {@link TestContext#softly()} failed. */
     @After(order = HookOrder.SOFT_ASSERTIONS)
     public void verifySoftAssertions() {
         context.softly().assertAll();
     }
 
+    /**
+     * For failed UI scenarios, attaches the URL and title (and grid session id), the page source and the
+     * browser console log.
+     *
+     * @param scenario the finished scenario
+     */
     @After(order = HookOrder.FAILURE_ARTIFACTS)
     public void attachFailureArtifacts(Scenario scenario) {
         if (!scenario.isFailed() || !browser.isStarted()) {
@@ -74,6 +94,11 @@ public class ReportingHooks {
         console.collect().ifPresent(logs -> scenario.attach(logs, "text/plain", "Browser console log"));
     }
 
+    /**
+     * Attaches the scenario's own log lines as "Scenario log", depending on {@code log.attach}.
+     *
+     * @param scenario the finished scenario
+     */
     @After(order = HookOrder.SCENARIO_LOG)
     public void attachScenarioLog(Scenario scenario) {
         AttachMode mode = config.scenarioLogMode();

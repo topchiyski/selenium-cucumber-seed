@@ -17,6 +17,15 @@ public class ParallelismListener implements IAlterSuiteListener {
 
     private static final Logger LOG = LoggerFactory.getLogger(ParallelismListener.class);
 
+    /** Created by TestNG from the suite's {@code <listeners>}. */
+    public ParallelismListener() {
+    }
+
+    /**
+     * Applies the {@code threads} setting to every suite before TestNG runs it.
+     *
+     * @param suites the suites about to run
+     */
     @Override
     public void alter(List<XmlSuite> suites) {
         LoggingBootstrap.install();

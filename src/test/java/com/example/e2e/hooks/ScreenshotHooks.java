@@ -19,23 +19,43 @@ public class ScreenshotHooks {
     private final ScreenshotService screenshots;
     private int stepIndex;
 
+    /**
+     * Creates the hooks for one scenario.
+     *
+     * @param config supplies {@code screenshot.mode}
+     * @param screenshots takes the screenshots
+     */
     public ScreenshotHooks(Config config, ScreenshotService screenshots) {
         this.config = config;
         this.screenshots = screenshots;
     }
 
+    /**
+     * Attaches a screenshot taken before the step runs.
+     *
+     * @param scenario the running scenario
+     */
     @BeforeStep
     public void beforeStep(Scenario scenario) {
         stepScreenshot(scenario, "Before");
     }
 
+    /**
+     * Attaches a screenshot taken after the step ran (also after a failing step).
+     *
+     * @param scenario the running scenario
+     */
     @AfterStep
     public void afterStep(Scenario scenario) {
         stepScreenshot(scenario, "After");
         stepIndex++;
     }
 
-    /** In {@code all} mode the after-step screenshot already shows the failing state. */
+    /**
+     * In {@code all} mode the after-step screenshot already shows the failing state.
+     *
+     * @param scenario the finished scenario
+     */
     @After(order = HookOrder.FAILURE_SCREENSHOT)
     public void failureScreenshot(Scenario scenario) {
         if (scenario.isFailed() && config.screenshotMode() == AttachMode.FAILURES) {

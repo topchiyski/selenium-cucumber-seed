@@ -19,6 +19,15 @@ public class StepTracker implements ConcurrentEventListener {
 
     private static final ThreadLocal<List<String>> STEPS = ThreadLocal.withInitial(List::of);
 
+    /** Created by Cucumber from the runner's {@code plugin} list. */
+    public StepTracker() {
+    }
+
+    /**
+     * Records each scenario's step texts when it starts.
+     *
+     * @param publisher Cucumber's event publisher
+     */
     @Override
     public void setEventPublisher(EventPublisher publisher) {
         publisher.registerHandlerFor(TestCaseStarted.class, event -> STEPS.set(event.getTestCase().getTestSteps().stream()
@@ -28,7 +37,12 @@ public class StepTracker implements ConcurrentEventListener {
                 .toList()));
     }
 
-    /** Text of the {@code index}-th step (0-based, Background steps included) of the current scenario. */
+    /**
+     * Text of the {@code index}-th step (0-based, Background steps included) of the current scenario.
+     *
+     * @param index step index
+     * @return the step text with secrets masked, or "step N" if the index is out of range
+     */
     public static String stepText(int index) {
         List<String> steps = STEPS.get();
         return index < steps.size() ? steps.get(index).trim() : "step " + (index + 1);

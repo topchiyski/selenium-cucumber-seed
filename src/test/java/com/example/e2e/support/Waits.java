@@ -23,15 +23,38 @@ public class Waits {
     private final WebDriver driver;
     private final Duration defaultTimeout;
 
+    /**
+     * Creates waits for a session.
+     *
+     * @param driver the session to wait on
+     * @param defaultTimeout timeout used by {@link #until(ExpectedCondition)}
+     */
     public Waits(WebDriver driver, Duration defaultTimeout) {
         this.driver = driver;
         this.defaultTimeout = defaultTimeout;
     }
 
+    /**
+     * Waits with the default timeout until the condition returns a non-null, non-false value.
+     *
+     * @param condition the condition, usually from {@link org.openqa.selenium.support.ui.ExpectedConditions}
+     * @param <T> the condition's result type
+     * @return the condition's result
+     * @throws org.openqa.selenium.TimeoutException if the condition isn't met in time
+     */
     public <T> T until(ExpectedCondition<T> condition) {
         return until(condition, defaultTimeout);
     }
 
+    /**
+     * Waits with a custom timeout until the condition returns a non-null, non-false value.
+     *
+     * @param condition the condition
+     * @param timeout how long to wait
+     * @param <T> the condition's result type
+     * @return the condition's result
+     * @throws org.openqa.selenium.TimeoutException if the condition isn't met in time
+     */
     public <T> T until(ExpectedCondition<T> condition, Duration timeout) {
         long start = System.nanoTime();
         try {
@@ -47,6 +70,11 @@ public class Waits {
         }
     }
 
+    /**
+     * Waits until {@code document.readyState} is {@code complete}.
+     *
+     * @throws org.openqa.selenium.TimeoutException if the page doesn't finish loading in time
+     */
     public void untilPageLoaded() {
         until(new ExpectedCondition<Boolean>() {
             @Override

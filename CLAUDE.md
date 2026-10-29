@@ -16,6 +16,7 @@ E2E browser-test seed: Gherkin → Cucumber 7 → TestNG, Selenium 4, Gradle (Ko
 - One scenario (preferred while iterating): `./gradlew test -Dheadless=true -Dcucumber.features=src/test/resources/features/<file>.feature:<line>`
 - By tag: `./gradlew test -Dheadless=true -Dcucumber.filter.tags="@smoke"`
 - Full suite (~20s, needs internet): `./gradlew test -Dheadless=true`
+- Javadoc + doclint (must stay warning-free): `./gradlew testJavadoc` → `build/docs/testJavadoc/`
 - Rerun failures: `./gradlew test -PignoreFailures && ./gradlew rerunFailed`
 - Reports: `./gradlew allureReport` → `build/reports/allure-report/allureReport/`; Cucumber HTML → `build/reports/cucumber/cucumber.html`; log → `build/logs/e2e.log`
 - Select scenarios with tags or `cucumber.features`; `--tests` matches nothing. `-Pverbose` shows test stdout. No linter or formatter is configured.
@@ -30,13 +31,14 @@ E2E browser-test seed: Gherkin → Cucumber 7 → TestNG, Selenium 4, Gradle (Ko
 | Config key | `config/default.properties` + `ConfigKeys` | read via `Config.get()` |
 | Browser options / new browser | `driver/<X>Setup` implements `BrowserSetup` | add constant to `BrowserType`; shared logic in `WebDriverFactory` |
 | New runner | `runners/` + its own testng xml | include `StepTracker`, `ExecutionLogger` and `AllureCucumber7Jvm` in `plugin` |
+| Visual checkpoint | `@visual` scenario + `VisualSteps`, or inject `visual/VisualCheck` | key only via `APPLITOOLS_API_KEY` env; fixed test data |
 | Log levels / appenders | `src/test/resources/logback-test.xml` | `-Dlog.level`, `-Dlog.console.level`, `-Dlog.file` |
 
 ## Architecture
 - `test` → `testng.xml` → `CucumberTestRunner` (parallel `@DataProvider`, one TestNG test per scenario; thread count from config `threads` via `ParallelismListener`). `rerunFailed` → `testng-rerun.xml` → `RerunFailedRunner` (`@build/rerun/failed.txt`).
 - Config layering, last wins: `config/default.properties` → `config/{env}.properties` (`-Denv`, default `local`) → env vars (`BASE_URL`) → `-D`.
 - `driver/Browser` is the per-scenario session (PicoContainer-scoped, `Disposable`). `BrowserHooks` starts it for non-`@api` scenarios and quits it. Implicit wait is 0: wait with `UiObject` helpers or `browser.waits()` instead of `Thread.sleep`.
-- Hooks are split by concern (`BrowserHooks`, `ScreenshotHooks`, `ReportingHooks`); all orders live in `hooks/HookOrder`. `@After` runs highest order first.
+- Hooks are split by concern (`BrowserHooks`, `ScreenshotHooks`, `ReportingHooks`, `VisualHooks`); all orders live in `hooks/HookOrder`. `@After` runs highest order first.
 - Step screenshots: `support/StepTracker` (Cucumber `ConcurrentEventListener`) records step texts per thread on `TestCaseStarted`; `ScreenshotHooks` indexes them and renames the Allure hook step via `Allure.getLifecycle().updateStep`. Mode: `screenshot.mode=all|failures|none`.
 - Logging: SLF4J → Logback; JUL (Selenium) bridged by `logging/LoggingBootstrap`, commons-logging by `jcl-over-slf4j`. `logging/ExecutionLogger` (Cucumber plugin) logs scenarios/steps, sets MDC `scenario` and starts `ScenarioLogAppender` capture; `ReportingHooks` attaches it as "Scenario log" (`log.attach`).
 - `test` wipes `build/allure-results` (unless `-PkeepAllureResults`); `rerunFailed` keeps it so reruns show as retries.
@@ -52,4 +54,5 @@ E2E browser-test seed: Gherkin → Cucumber 7 → TestNG, Selenium 4, Gradle (Ko
 ## Done criteria
 1. `./gradlew compileTestJava -q` passes.
 2. Affected scenarios pass, run by tag or `feature:line`, headless. Report pass/fail counts; on failure, read `build/logs/e2e.log` and the Allure attachments before changing code.
-3. Edits to `README.md` run-options or config tables stay in sync with `default.properties` and `build.gradle.kts`.
+3. `./gradlew testJavadoc` reports no warnings: every public/protected type, constructor, method and constant has Javadoc with `@param`/`@return`/`@throws`.
+4. Edits to `README.md` run-options or config tables stay in sync with `default.properties` and `build.gradle.kts`.

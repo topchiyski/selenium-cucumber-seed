@@ -25,6 +25,12 @@ public final class AllureEnvironmentWriter {
     private AllureEnvironmentWriter() {
     }
 
+    /**
+     * Writes {@code environment.properties} and copies {@code categories.json} into the Allure results directory.
+     *
+     * @param config the run's configuration
+     * @throws java.io.UncheckedIOException if the files can't be written
+     */
     public static void write(Config config) {
         Path resultsDir = Path.of(System.getProperty("allure.results.directory", "build/allure-results"));
 

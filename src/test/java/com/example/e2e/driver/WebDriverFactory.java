@@ -34,10 +34,23 @@ public class WebDriverFactory {
 
     private final Config config;
 
+    /**
+     * Creates a factory.
+     *
+     * @param config execution mode, grid URL, timeouts and window settings
+     */
     public WebDriverFactory(Config config) {
         this.config = config;
     }
 
+    /**
+     * Starts a new session, locally or on the grid, with timeouts and window size applied.
+     *
+     * @param browser the browser to start
+     * @param sessionName name shown for the session on a Selenium Grid
+     * @return the new session
+     * @throws org.openqa.selenium.WebDriverException if the browser can't be started (logged with context first)
+     */
     public WebDriver create(BrowserType browser, String sessionName) {
         BrowserSettings settings = BrowserSettings.from(config);
         AbstractDriverOptions<?> options = browser.setup().options(settings);

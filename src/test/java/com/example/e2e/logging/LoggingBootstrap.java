@@ -16,6 +16,7 @@ public final class LoggingBootstrap {
     private LoggingBootstrap() {
     }
 
+    /** Installs the java.util.logging bridge; safe to call more than once. */
     public static void install() {
         if (INSTALLED.compareAndSet(false, true)) {
             SLF4JBridgeHandler.removeHandlersForRootLogger(); // otherwise JUL also prints to stderr

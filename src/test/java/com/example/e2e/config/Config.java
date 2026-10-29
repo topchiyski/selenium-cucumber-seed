@@ -41,11 +41,21 @@ public final class Config {
         this.values = Values.INSTANCE;
     }
 
-    /** The shared instance, for code that isn't created by PicoContainer. */
+    /**
+     * The shared instance, for code that isn't created by PicoContainer.
+     *
+     * @return the shared instance
+     */
     public static Config get() {
         return SHARED;
     }
 
+    /**
+     * Looks up a key through all configuration layers.
+     *
+     * @param key config key, e.g. {@code base.url}
+     * @return the trimmed value, or empty if the key is missing or blank in every layer
+     */
     public Optional<String> find(String key) {
         return values.resolve(key).map(Resolved::value);
     }
@@ -123,56 +133,133 @@ public final class Config {
         }
     }
 
+    /**
+     * Returns a required value.
+     *
+     * @param key config key
+     * @return the trimmed value
+     * @throws IllegalStateException if the key has no value in any layer
+     */
     public String get(String key) {
         return find(key).orElseThrow(() -> new IllegalStateException("Missing config key '" + key + "' (env=" + env() + ")"));
     }
 
+    /**
+     * Returns an optional value with a fallback.
+     *
+     * @param key config key
+     * @param defaultValue returned when the key has no value
+     * @return the value, or {@code defaultValue}
+     */
     public String get(String key, String defaultValue) {
         return find(key).orElse(defaultValue);
     }
 
+    /**
+     * Returns a required integer value.
+     *
+     * @param key config key
+     * @return the value as an {@code int}
+     * @throws IllegalStateException if the key has no value
+     * @throws NumberFormatException if the value is not an integer
+     */
     public int getInt(String key) {
         return Integer.parseInt(get(key));
     }
 
+    /**
+     * Returns a required boolean value; only {@code true} (any case) counts as true.
+     *
+     * @param key config key
+     * @return the value as a {@code boolean}
+     * @throws IllegalStateException if the key has no value
+     */
     public boolean getBoolean(String key) {
         return Boolean.parseBoolean(get(key));
     }
 
+    /**
+     * Returns a required duration configured as a whole number of seconds.
+     *
+     * @param key config key, e.g. {@code timeout.explicit}
+     * @return the duration
+     * @throws IllegalStateException if the key has no value
+     * @throws NumberFormatException if the value is not an integer
+     */
     public Duration getSeconds(String key) {
         return Duration.ofSeconds(getInt(key));
     }
 
+    /**
+     * The environment that selected {@code config/<env>.properties}.
+     *
+     * @return the name from {@code -Denv} or {@code ENV}, default {@code local}
+     */
     public String env() {
         return values.env;
     }
 
     // Typed accessors for the keys used by the framework itself.
 
+    /**
+     * Base URL of the application under test.
+     *
+     * @return {@code base.url}
+     */
     public String baseUrl() {
         return get(ConfigKeys.BASE_URL);
     }
 
+    /**
+     * Base URL for {@code ApiClient} requests.
+     *
+     * @return {@code api.base.url}
+     */
     public String apiBaseUrl() {
         return get(ConfigKeys.API_BASE_URL);
     }
 
+    /**
+     * Whether browsers run without a visible window.
+     *
+     * @return {@code headless}
+     */
     public boolean headless() {
         return getBoolean(ConfigKeys.HEADLESS);
     }
 
+    /**
+     * Whether browsers run on a Selenium Grid instead of locally.
+     *
+     * @return {@code true} when {@code execution=remote}
+     */
     public boolean remote() {
         return "remote".equalsIgnoreCase(get(ConfigKeys.EXECUTION));
     }
 
+    /**
+     * Default timeout for explicit waits.
+     *
+     * @return {@code timeout.explicit}
+     */
     public Duration explicitTimeout() {
         return getSeconds(ConfigKeys.TIMEOUT_EXPLICIT);
     }
 
+    /**
+     * When step and failure screenshots are taken.
+     *
+     * @return {@code screenshot.mode}
+     */
     public AttachMode screenshotMode() {
         return attachMode(ConfigKeys.SCREENSHOT_MODE);
     }
 
+    /**
+     * When each scenario's log lines are attached to the report.
+     *
+     * @return {@code log.attach}
+     */
     public AttachMode scenarioLogMode() {
         return attachMode(ConfigKeys.LOG_ATTACH);
     }
@@ -181,6 +268,11 @@ public final class Config {
         return AttachMode.valueOf(get(key).toUpperCase(Locale.ROOT));
     }
 
+    /**
+     * Number of scenarios run in parallel.
+     *
+     * @return {@code threads}
+     */
     public int threads() {
         return getInt(ConfigKeys.THREADS);
     }
@@ -191,6 +283,7 @@ public final class Config {
         ALL,
         /** Only when a scenario fails. */
         FAILURES,
+        /** Never. */
         NONE
     }
 }

@@ -13,16 +13,26 @@ public class CheckoutInformationPage extends BasePage {
     private static final By CONTINUE = By.id("continue");
     private static final By ERROR = By.cssSelector("[data-test='error']");
 
+    /**
+     * Creates the page object.
+     *
+     * @param browser the scenario's browser
+     */
     public CheckoutInformationPage(Browser browser) {
         super(browser);
     }
 
+    /** {@inheritDoc} */
     @Override
     protected By pageMarker() {
         return FIRST_NAME;
     }
 
-    /** Fills in the form and continues; lands on the overview, or stays here with an error. */
+    /**
+     * Fills in the form and continues; lands on the overview, or stays here with an error.
+     *
+     * @param customer the details to enter; empty fields are left blank
+     */
     public void enterCustomer(Customer customer) {
         log.info("Enter customer details {}", customer);
         type(FIRST_NAME, customer.firstName());
@@ -31,6 +41,11 @@ public class CheckoutInformationPage extends BasePage {
         click(CONTINUE);
     }
 
+    /**
+     * The validation error shown after continuing with missing fields.
+     *
+     * @return e.g. "Error: First Name is required"
+     */
     public String errorMessage() {
         return text(ERROR);
     }

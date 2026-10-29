@@ -22,10 +22,21 @@ public class BrowserConsole {
 
     private final Browser browser;
 
+    /**
+     * Creates the reader.
+     *
+     * @param browser the scenario's browser
+     */
     public BrowserConsole(Browser browser) {
         this.browser = browser;
     }
 
+    /**
+     * Reads the browser console. Console errors are also logged as a warning.
+     *
+     * @return one line per console entry, a note if the browser doesn't support this, or empty if no browser
+     *         is running or the log can't be read
+     */
     public Optional<String> collect() {
         if (!browser.isStarted()) {
             return Optional.empty();

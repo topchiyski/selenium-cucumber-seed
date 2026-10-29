@@ -19,10 +19,20 @@ public class ScenarioLogAppender extends UnsynchronizedAppenderBase<ILoggingEven
 
     private Encoder<ILoggingEvent> encoder;
 
+    /** Created by Logback from logback-test.xml. */
+    public ScenarioLogAppender() {
+    }
+
+    /**
+     * Set by Logback from the appender's {@code <encoder>} element.
+     *
+     * @param encoder formats each captured event
+     */
     public void setEncoder(Encoder<ILoggingEvent> encoder) {
         this.encoder = encoder;
     }
 
+    /** Starts the appender; refuses to start without an encoder. */
     @Override
     public void start() {
         if (encoder == null) {
@@ -32,6 +42,11 @@ public class ScenarioLogAppender extends UnsynchronizedAppenderBase<ILoggingEven
         super.start();
     }
 
+    /**
+     * Adds the event to the current thread's buffer, if a scenario is being captured.
+     *
+     * @param event the logging event
+     */
     @Override
     protected void append(ILoggingEvent event) {
         StringBuilder buffer = BUFFER.get();
@@ -44,16 +59,22 @@ public class ScenarioLogAppender extends UnsynchronizedAppenderBase<ILoggingEven
         }
     }
 
+    /** Starts capturing on the current thread, discarding anything captured before. */
     public static void startCapture() {
         BUFFER.set(new StringBuilder());
     }
 
-    /** The lines captured so far for the current thread's scenario (empty if not capturing). */
+    /**
+     * The lines captured so far for the current thread's scenario (empty if not capturing).
+     *
+     * @return the captured text, or an empty string if not capturing
+     */
     public static String captured() {
         StringBuilder buffer = BUFFER.get();
         return buffer == null ? "" : buffer.toString();
     }
 
+    /** Stops capturing on the current thread and releases the buffer. */
     public static void stopCapture() {
         BUFFER.remove();
     }

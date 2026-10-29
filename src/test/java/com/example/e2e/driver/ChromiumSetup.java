@@ -9,19 +9,47 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 
-/** Shared setup for Chromium-based browsers (Chrome, Edge). */
+/**
+ * Shared setup for Chromium-based browsers (Chrome, Edge).
+ *
+ * @param <O> the browser's options type
+ */
 public abstract class ChromiumSetup<O extends ChromiumOptions<O>> implements BrowserSetup {
 
+    /** Constructor for subclasses. */
+    protected ChromiumSetup() {
+    }
+
+    /**
+     * Creates empty options of the concrete browser type.
+     *
+     * @return new browser options
+     */
     protected abstract O newOptions();
 
-    /** Vendor-prefixed capability for console logging, e.g. {@code goog:loggingPrefs}. */
+    /**
+     * Vendor-prefixed capability for console logging, e.g. {@code goog:loggingPrefs}.
+     *
+     * @return the capability name
+     */
     protected abstract String loggingPrefsCapability();
 
-    /** Arguments only this browser needs. */
+    /**
+     * Arguments only this browser needs.
+     *
+     * @return additional arguments; none by default
+     */
     protected List<String> browserArgs() {
         return List.of();
     }
 
+    /**
+     * Builds options shared by all Chromium browsers: headless mode and window size, extra arguments,
+     * no password-manager pop-ups, and console logging enabled.
+     *
+     * @param settings the browser settings
+     * @return the browser options
+     */
     @Override
     public AbstractDriverOptions<?> options(BrowserSettings settings) {
         O options = newOptions();
@@ -39,6 +67,11 @@ public abstract class ChromiumSetup<O extends ChromiumOptions<O>> implements Bro
         return options;
     }
 
+    /**
+     * Chromium browsers expose console logs through WebDriver's logging API.
+     *
+     * @return {@code true}
+     */
     @Override
     public boolean supportsConsoleLogs() {
         return true;

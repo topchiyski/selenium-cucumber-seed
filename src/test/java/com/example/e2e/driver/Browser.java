@@ -25,12 +25,22 @@ public class Browser implements Disposable {
     private BrowserType type;
     private Waits waits;
 
+    /**
+     * Creates the scenario's browser; nothing is started until {@link #start(String)}.
+     *
+     * @param config supplies the browser type, base URL and wait timeout
+     * @param factory creates the WebDriver session
+     */
     public Browser(Config config, WebDriverFactory factory) {
         this.config = config;
         this.factory = factory;
     }
 
-    /** Starts the configured browser, if it isn't running yet. */
+    /**
+     * Starts the configured browser, if it isn't running yet.
+     *
+     * @param sessionName name shown for the session on a Selenium Grid, usually the scenario name
+     */
     public void start(String sessionName) {
         if (driver != null) {
             return;
@@ -40,11 +50,21 @@ public class Browser implements Disposable {
         waits = new Waits(driver, config.explicitTimeout());
     }
 
+    /**
+     * Whether a browser session is running.
+     *
+     * @return {@code true} between {@link #start(String)} and {@link #quit()}
+     */
     public boolean isStarted() {
         return driver != null;
     }
 
-    /** The WebDriver session. Fails clearly if a step needs a browser in a scenario that didn't start one. */
+    /**
+     * The WebDriver session. Fails clearly if a step needs a browser in a scenario that didn't start one.
+     *
+     * @return the running session
+     * @throws IllegalStateException if no browser is running
+     */
     public WebDriver driver() {
         if (driver == null) {
             throw new IllegalStateException("No browser is running for this scenario. "
@@ -53,16 +73,32 @@ public class Browser implements Disposable {
         return driver;
     }
 
+    /**
+     * The browser that was started.
+     *
+     * @return the browser type, or {@code null} before {@link #start(String)}
+     */
     public BrowserType type() {
         return type;
     }
 
+    /**
+     * Explicit waits bound to this session, using {@code timeout.explicit} by default.
+     *
+     * @return the waits
+     * @throws IllegalStateException if no browser is running
+     */
     public Waits waits() {
         driver(); // same clear error as driver() when no browser is running
         return waits;
     }
 
-    /** Opens an absolute URL, or a path relative to {@code base.url}, and waits for the page to load. */
+    /**
+     * Opens an absolute URL, or a path relative to {@code base.url}, and waits for the page to load.
+     *
+     * @param pathOrUrl e.g. {@code /inventory.html} or {@code https://example.com}
+     * @throws IllegalStateException if no browser is running
+     */
     public void open(String pathOrUrl) {
         String url = resolve(pathOrUrl);
         long start = System.nanoTime();
@@ -71,14 +107,27 @@ public class Browser implements Disposable {
         LOG.info("Opened {} in {} ms", url, (System.nanoTime() - start) / 1_000_000);
     }
 
+    /**
+     * The URL of the current page.
+     *
+     * @return the current URL
+     * @throws IllegalStateException if no browser is running
+     */
     public String currentUrl() {
         return driver().getCurrentUrl();
     }
 
+    /**
+     * The title of the current page.
+     *
+     * @return the page title
+     * @throws IllegalStateException if no browser is running
+     */
     public String title() {
         return driver().getTitle();
     }
 
+    /** Closes the browser session. Safe to call when no browser is running or more than once. */
     public void quit() {
         if (driver == null) {
             return;
@@ -95,6 +144,7 @@ public class Browser implements Disposable {
         }
     }
 
+    /** Called by PicoContainer at the end of the scenario; quits the browser if it's still running. */
     @Override
     public void dispose() {
         quit();

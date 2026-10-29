@@ -22,6 +22,18 @@ public class Slf4jLoggingFilter implements Filter {
     private static final Logger LOG = LoggerFactory.getLogger(Slf4jLoggingFilter.class);
     private static final int MAX_BODY_CHARS = 2_000;
 
+    /** Creates the filter; {@code ApiClient} adds one to its request specification. */
+    public Slf4jLoggingFilter() {
+    }
+
+    /**
+     * Logs the request at DEBUG, passes it down the filter chain and logs the outcome.
+     *
+     * @param request the request about to be sent
+     * @param responseSpec the response specification of the request
+     * @param ctx the rest of the filter chain
+     * @return the response returned by the chain
+     */
     @Override
     public Response filter(FilterableRequestSpecification request, FilterableResponseSpecification responseSpec, FilterContext ctx) {
         if (LOG.isDebugEnabled()) {
