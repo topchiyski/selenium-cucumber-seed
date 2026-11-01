@@ -140,6 +140,7 @@ tasks.register<Javadoc>("testJavadoc") {
         encoding = "UTF-8"
         windowTitle = "${project.name} test framework"
         addBooleanOption("Xdoclint:all", true)
+        addBooleanOption("Werror", true) // the API docs must stay warning-free; CI enforces it
         addStringOption("Xmaxwarns", "1000")
     }
 }

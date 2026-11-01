@@ -269,7 +269,16 @@ Any other grid (Selenium Grid, Selenoid, cloud providers) works by pointing `gri
 
 ## CI (GitHub Actions)
 
-`.github/workflows/e2e.yml` runs on pushes to `main`, pull requests, weekday mornings and on demand (with `env` and `tags` inputs). It runs Chrome and Firefox in parallel, headless, reruns failed scenarios once, builds the Allure report, and uploads all reports and logs as artifacts. The job fails only if scenarios still fail after the rerun.
+`.github/workflows/e2e.yml` runs on pushes to `main`, pull requests, weekday mornings and on demand (with `env` and `tags` inputs). A `checks` job first validates the Gradle wrapper, compiles and runs `testJavadoc` (warnings fail it). Then Chrome and Firefox run in parallel, headless; failed scenarios are rerun once, pass/fail counts and failing scenarios go to the run's summary page, and the Allure report, Cucumber reports and logs are uploaded as artifacts (`e2e-reports-<browser>`, kept 14 days). A browser job fails only if scenarios still fail after the rerun.
+
+Setup on GitHub:
+
+1. **Actions permissions** (Settings → Actions → General): allow GitHub-owned actions plus `gradle/actions/wrapper-validation`, or allow all actions.
+2. **Secrets** (Settings → Secrets and variables → Actions), all optional: `APPLITOOLS_API_KEY` for `@visual` checks. Any other secret your config needs is read the same way: add it as a secret and map it in the job's `env:` block (e.g. `MY_SECRET: ${{ secrets.MY_SECRET }}` → `config.get("my.secret")`).
+3. **Branch protection** (Settings → Branches → `main`): require the `checks`, `chrome` and `firefox` status checks.
+4. **Target environment:** the workflow uses `-Denv=dev` by default; set `base.url`/`api.base.url` in `config/dev.properties` (or pick another `env` when running it manually).
+
+`.github/dependabot.yml` opens weekly PRs for action and Gradle dependency updates (Cucumber major versions excluded, see [Pinned choices](CLAUDE.md)). Keep the Selenium image tags in `docker/docker-compose*.yml` in step with `seleniumVersion` by hand.
 
 ## Project layout
 
@@ -292,7 +301,8 @@ src/test/resources/
   config/    <env>.properties
   testng.xml, testng-rerun.xml, allure.properties, categories.json, logback-test.xml
 docker/      Selenium Grid compose files
-.github/workflows/e2e.yml   CI pipeline
+.github/workflows/e2e.yml   CI pipeline (scripts/test-summary.py writes the run summary)
+.github/dependabot.yml      dependency update PRs
 CLAUDE.md, .claude/         instructions and rules for Claude Code
 ```
 

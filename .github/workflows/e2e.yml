@@ -24,8 +24,32 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Fast gate before any browser starts: the wrapper jar is genuine, the code compiles and Javadoc is warning-free.
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+
+      # Fails if gradle/wrapper/gradle-wrapper.jar doesn't match an official Gradle release checksum.
+      # (MIT-licensed; unlike setup-gradle it doesn't use the proprietary caching component.)
+      - uses: gradle/actions/wrapper-validation@v6
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+
+      - name: Compile
+        run: ./gradlew compileTestJava
+
+      - name: Javadoc (doclint, warnings are errors)
+        run: ./gradlew testJavadoc
+
   e2e:
     name: ${{ matrix.browser }}
+    needs: checks
     runs-on: ubuntu-latest
     timeout-minutes: 45
     strategy:
@@ -43,8 +67,8 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
-      # `cache: gradle` caches ~/.gradle (dependencies, wrapper). gradle/actions is deliberately not used:
-      # since v6 its caching is a proprietary component under Gradle's Terms of Use.
+      # `cache: gradle` caches ~/.gradle (dependencies, wrapper). gradle/actions/setup-gradle is deliberately
+      # not used: since v6 its caching is a proprietary component under Gradle's Terms of Use.
       - uses: actions/setup-java@v6
         with:
           distribution: temurin
@@ -63,6 +87,10 @@ jobs:
         id: rerun
         if: hashFiles('build/rerun/failed.txt') != ''
         run: ./gradlew rerunFailed -Denv="$E2E_ENV" -Dbrowser=${{ matrix.browser }} -Dheadless=true
+
+      - name: Write job summary
+        if: always()
+        run: python3 -I .github/scripts/test-summary.py "${{ matrix.browser }} ($E2E_ENV, $E2E_TAGS)" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Generate Allure report
         if: always()
