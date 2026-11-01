@@ -1,0 +1,29 @@
+# Weekly update PRs for workflow actions and Gradle dependencies (versions in build.gradle.kts).
+# Cucumber stays on 7.x until Allure ships an adapter for 8 (see CLAUDE.md "Pinned choices").
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
+
+  - package-ecosystem: gradle
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 10
+    ignore:
+      - dependency-name: "io.cucumber:*"
+        update-types: ["version-update:semver-major"]
+    groups:
+      selenium:
+        patterns: ["org.seleniumhq.selenium:*"]
+      cucumber:
+        patterns: ["io.cucumber:*"]
+      allure:
+        patterns: ["io.qameta.allure*"]
+      logging:
+        patterns: ["org.slf4j:*", "ch.qos.logback:*"]
